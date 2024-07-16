@@ -7,6 +7,8 @@ const (
 	ExpiredStakingQueueName   string = "expired_staking_queue"
 	StakingStatsQueueName     string = "staking_stats_queue"
 	BtcInfoQueueName          string = "btc_info_queue"
+	// Scalar
+	ScalarStakingQueueName string = "scalar_staking_queue"
 )
 
 const (
@@ -16,6 +18,8 @@ const (
 	ExpiredStakingEventType   EventType = 4
 	StatsEventType            EventType = 5
 	BtcInfoEventType          EventType = 6
+	// Scalar
+	ScalarStakingEventType EventType = 7
 )
 
 type EventType int
@@ -212,5 +216,55 @@ func NewBtcInfoEvent(height, confirmedTvl, unconfirmedTvl uint64) BtcInfoEvent {
 		Height:         height,
 		ConfirmedTvl:   confirmedTvl,
 		UnconfirmedTvl: unconfirmedTvl,
+	}
+}
+
+// Scalar
+type ScalarStakingEvent struct {
+	EventType             EventType `json:"event_type"` // always 1. ActiveStakingEventType
+	StakingTxHashHex      string    `json:"staking_tx_hash_hex"`
+	StakerPkHex           string    `json:"staker_pk_hex"`
+	FinalityProviderPkHex string    `json:"finality_provider_pk_hex"`
+	StakingValue          uint64    `json:"staking_value"`
+	StakingStartHeight    uint64    `json:"staking_start_height"`
+	StakingStartTimestamp int64     `json:"staking_start_timestamp"`
+	StakingTimeLock       uint64    `json:"staking_timelock"`
+	StakingOutputIndex    uint64    `json:"staking_output_index"`
+	StakingTxHex          string    `json:"staking_tx_hex"`
+	IsOverflow            bool      `json:"is_overflow"`
+}
+
+func (e ScalarStakingEvent) GetEventType() EventType {
+	return ScalarStakingEventType
+}
+
+func (e ScalarStakingEvent) GetStakingTxHashHex() string {
+	return e.StakingTxHashHex
+}
+
+func NewScalarStakingEvent(
+	stakingTxHashHex string,
+	stakerPkHex string,
+	finalityProviderPkHex string,
+	stakingValue uint64,
+	stakingStartHeight uint64,
+	stakingStartTimestamp int64,
+	stakingTimeLock uint64,
+	stakingOutputIndex uint64,
+	stakingTxHex string,
+	isOverflow bool,
+) ScalarStakingEvent {
+	return ScalarStakingEvent{
+		EventType:             ActiveStakingEventType,
+		StakingTxHashHex:      stakingTxHashHex,
+		StakerPkHex:           stakerPkHex,
+		FinalityProviderPkHex: finalityProviderPkHex,
+		StakingValue:          stakingValue,
+		StakingStartHeight:    stakingStartHeight,
+		StakingStartTimestamp: stakingStartTimestamp,
+		StakingTimeLock:       stakingTimeLock,
+		StakingOutputIndex:    stakingOutputIndex,
+		StakingTxHex:          stakingTxHex,
+		IsOverflow:            isOverflow,
 	}
 }

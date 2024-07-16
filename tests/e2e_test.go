@@ -16,6 +16,32 @@ const (
 	mockStakerHash = "0x1234567890abcdef"
 )
 
+// Scalar
+func TestScalarStakingEvent(t *testing.T) {
+	numScalarStakingEvents := 3
+	scalarStakingEvents := buildNScalarStakingEvents(mockStakerHash, numScalarStakingEvents)
+	queueCfg := config.DefaultQueueConfig()
+
+	testServer := setupTestQueueConsumer(t, queueCfg)
+	defer testServer.Stop(t)
+
+	queueManager := testServer.QueueManager
+
+	scalarStakingEventReceivedChan, err := queueManager.ScalarStakingQueue.ReceiveMessages()
+	require.NoError(t, err)
+
+	for _, ev := range scalarStakingEvents {
+		err = queueManager.PushScalarStakingEvent(ev)
+		require.NoError(t, err)
+
+		receivedEv := <-scalarStakingEventReceivedChan
+		var scalarStakingEv client.ScalarStakingEvent
+		err := json.Unmarshal([]byte(receivedEv.Body), &scalarStakingEv)
+		require.NoError(t, err)
+		require.Equal(t, ev, &scalarStakingEv)
+	}
+}
+
 func TestStakingEvent(t *testing.T) {
 	numStakingEvents := 3
 	activeStakingEvents := buildActiveNStakingEvents(mockStakerHash, numStakingEvents)

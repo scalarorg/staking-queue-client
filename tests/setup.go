@@ -80,6 +80,28 @@ func purgeQueues(conn *amqp091.Connection, queues []string) error {
 	return nil
 }
 
+// Scalar
+func buildNScalarStakingEvents(stakerHash string, numOfEvent int) []*client.ScalarStakingEvent {
+	var scalarStakingEvents []*client.ScalarStakingEvent
+	for i := 0; i < numOfEvent; i++ {
+		scalarStakingEvent := client.NewScalarStakingEvent(
+			"0x1234567890abcdef"+fmt.Sprint(i),
+			stakerHash,
+			"0xabcdef1234567890"+fmt.Sprint(i),
+			1+uint64(i),
+			100+uint64(i),
+			time.Now().Unix(),
+			200+uint64(i),
+			1+uint64(i),
+			"0xabcdef1234567890"+fmt.Sprint(i),
+			false,
+		)
+
+		scalarStakingEvents = append(scalarStakingEvents, &scalarStakingEvent)
+	}
+	return scalarStakingEvents
+}
+
 func buildActiveNStakingEvents(stakerHash string, numOfEvent int) []*client.ActiveStakingEvent {
 	var activeStakingEvents []*client.ActiveStakingEvent
 	for i := 0; i < numOfEvent; i++ {

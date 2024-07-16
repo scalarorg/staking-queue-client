@@ -12,6 +12,9 @@ import (
 )
 
 type QueueManager struct {
+	// Scalar
+	ScalarStakingQueue client.QueueClient
+
 	StakingQueue   client.QueueClient
 	UnbondingQueue client.QueueClient
 	WithdrawQueue  client.QueueClient
@@ -52,18 +55,43 @@ func NewQueueManager(cfg *config.QueueConfig, logger *zap.Logger) (*QueueManager
 		return nil, fmt.Errorf("failed to create btc info queue: %w", err)
 	}
 
+	// Scalar
+	scalarStakingQueue, err := client.NewQueueClient(cfg, client.ScalarStakingQueueName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create scalar staking queue: %w", err)
+	}
+
 	return &QueueManager{
-		StakingQueue:   stakingQueue,
-		UnbondingQueue: unbondingQueue,
-		WithdrawQueue:  withdrawQueue,
-		ExpiryQueue:    expiryQueue,
-		StatsQueue:     statsQueue,
-		BtcInfoQueue:   BtcInfoQueue,
-		logger:         logger.With(zap.String("module", "queue consumer")),
+		ScalarStakingQueue: scalarStakingQueue,
+		StakingQueue:       stakingQueue,
+		UnbondingQueue:     unbondingQueue,
+		WithdrawQueue:      withdrawQueue,
+		ExpiryQueue:        expiryQueue,
+		StatsQueue:         statsQueue,
+		BtcInfoQueue:       BtcInfoQueue,
+		logger:             logger.With(zap.String("module", "queue consumer")),
 	}, nil
 }
 
 func (qc *QueueManager) Start() error {
+	return nil
+}
+
+// Scalar
+func (qc *QueueManager) PushScalarStakingEvent(ev *client.ScalarStakingEvent) error {
+	jsonBytes, err := json.Marshal(ev)
+	if err != nil {
+		return err
+	}
+	messageBody := string(jsonBytes)
+
+	qc.logger.Info("pushing scalar staking event", zap.String("tx_hash", ev.StakingTxHashHex))
+	err = qc.ScalarStakingQueue.SendMessage(context.TODO(), messageBody)
+	if err != nil {
+		return fmt.Errorf("failed to push scalar staking event: %w", err)
+	}
+	qc.logger.Info("successfully pushed scalar staking event", zap.String("tx_hash", ev.StakingTxHashHex))
+
 	return nil
 }
 
