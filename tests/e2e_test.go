@@ -8,8 +8,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/babylonchain/staking-queue-client/client"
+	// "github.com/babylonchain/staking-queue-client/client"
 	"github.com/babylonchain/staking-queue-client/config"
+	"github.com/scalarorg/staking-queue-client/client"
 )
 
 const (
@@ -19,7 +20,7 @@ const (
 // Scalar
 func TestScalarStakingEvent(t *testing.T) {
 	numScalarStakingEvents := 3
-	scalarStakingEvents := buildNScalarStakingEvents(mockStakerHash, numScalarStakingEvents)
+	scalarStakingEvents := buildNScalarVaultEvents(mockStakerHash, numScalarStakingEvents)
 	queueCfg := config.DefaultQueueConfig()
 
 	testServer := setupTestQueueConsumer(t, queueCfg)
@@ -27,15 +28,15 @@ func TestScalarStakingEvent(t *testing.T) {
 
 	queueManager := testServer.QueueManager
 
-	scalarStakingEventReceivedChan, err := queueManager.ScalarStakingQueue.ReceiveMessages()
+	scalarStakingEventReceivedChan, err := queueManager.VaultQueue.ReceiveMessages()
 	require.NoError(t, err)
 
 	for _, ev := range scalarStakingEvents {
-		err = queueManager.PushScalarStakingEvent(ev)
+		err = queueManager.PushVaultEvent(ev)
 		require.NoError(t, err)
 
 		receivedEv := <-scalarStakingEventReceivedChan
-		var scalarStakingEv client.ScalarStakingEvent
+		var scalarStakingEv client.ActiveVaultEvent
 		err := json.Unmarshal([]byte(receivedEv.Body), &scalarStakingEv)
 		require.NoError(t, err)
 		require.Equal(t, ev, &scalarStakingEv)
