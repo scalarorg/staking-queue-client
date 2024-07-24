@@ -27,3 +27,7 @@ rabbitmq_data/
 .DS_Store
 tmp/
 build/
+
+
+*/go.mod
+*/go.sum
