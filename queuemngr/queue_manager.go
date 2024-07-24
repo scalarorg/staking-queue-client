@@ -59,25 +59,22 @@ func NewQueueManager(cfg *config.QueueConfig, logger *zap.Logger) (*QueueManager
 	}
 
 	// Scalar
-	vaultQueue, err := client.NewQueueClient(cfg, client.VaultQueueName)
+	vaultQueue, err := client.NewQueueClient(cfg, client.ActiveVaultQueueName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create scalar vault queue: %w", err)
 	}
-	burningQueue, err := client.NewQueueClient(cfg, client.BurningQueueName)
+	burningQueue, err := client.NewQueueClient(cfg, client.BurningVaultQueueName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create scalar burning queue: %w", err)
 	}
 
-	withdrawVaultQueue, err := client.NewQueueClient(cfg, client.WithdrawVaultName)
+	withdrawVaultQueue, err := client.NewQueueClient(cfg, client.WithdrawVaultQueueName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create scalar withdraw vault queue: %w", err)
 	}
+	// Scalar
 
 	return &QueueManager{
-		VaultQueue:         vaultQueue,
-		BurningQueue:       burningQueue,
-		WithdrawVaultQueue: withdrawVaultQueue,
-
 		StakingQueue:   stakingQueue,
 		UnbondingQueue: unbondingQueue,
 		WithdrawQueue:  withdrawQueue,
@@ -85,27 +82,15 @@ func NewQueueManager(cfg *config.QueueConfig, logger *zap.Logger) (*QueueManager
 		StatsQueue:     statsQueue,
 		BtcInfoQueue:   BtcInfoQueue,
 		logger:         logger.With(zap.String("module", "queue consumer")),
+		// Scalar
+		VaultQueue:         vaultQueue,
+		BurningQueue:       burningQueue,
+		WithdrawVaultQueue: withdrawVaultQueue,
+		// Scalar
 	}, nil
 }
 
 func (qc *QueueManager) Start() error {
-	return nil
-}
-
-func (qc *QueueManager) PushBurningEvent(ev *client.BurningVaultEvent) error {
-	jsonBytes, err := json.Marshal(ev)
-	if err != nil {
-		return err
-	}
-	messageBody := string(jsonBytes)
-
-	qc.logger.Info("pushing scalar vault event", zap.String("tx_hash", ev.VaultTxHashHex))
-	err = qc.BurningQueue.SendMessage(context.TODO(), messageBody)
-	if err != nil {
-		return fmt.Errorf("failed to push scalar vault event: %w", err)
-	}
-	qc.logger.Info("successfully pushed scalar vault event", zap.String("tx_hash", ev.VaultTxHashHex))
-
 	return nil
 }
 
@@ -194,6 +179,60 @@ func (qc *QueueManager) PushBtcInfoEvent(ev *client.BtcInfoEvent) error {
 	return nil
 }
 
+// SCALAR
+func (qc *QueueManager) PushVaultEvent(ev *client.ActiveVaultEvent) error {
+	jsonBytes, err := json.Marshal(ev)
+	if err != nil {
+		return err
+	}
+	messageBody := string(jsonBytes)
+
+	qc.logger.Info("pushing vault event", zap.String("tx_hash", ev.VaultTxHashHex))
+	err = qc.VaultQueue.SendMessage(context.TODO(), messageBody)
+	if err != nil {
+		return fmt.Errorf("failed to push vault event: %w", err)
+	}
+	qc.logger.Info("successfully pushed vault event", zap.String("tx_hash", ev.VaultTxHashHex))
+
+	return nil
+}
+
+func (qc *QueueManager) PushBurningEvent(ev *client.BurningVaultEvent) error {
+	jsonBytes, err := json.Marshal(ev)
+	if err != nil {
+		return err
+	}
+	messageBody := string(jsonBytes)
+
+	qc.logger.Info("pushing scalar vault event", zap.String("tx_hash", ev.VaultTxHashHex))
+	err = qc.BurningQueue.SendMessage(context.TODO(), messageBody)
+	if err != nil {
+		return fmt.Errorf("failed to push scalar vault event: %w", err)
+	}
+	qc.logger.Info("successfully pushed scalar vault event", zap.String("tx_hash", ev.VaultTxHashHex))
+
+	return nil
+}
+
+func (qc *QueueManager) PushWithdrawVaultEvent(ev *client.WithdrawVaultEvent) error {
+	jsonBytes, err := json.Marshal(ev)
+	if err != nil {
+		return err
+	}
+	messageBody := string(jsonBytes)
+
+	qc.logger.Info("pushing withdraw vault event", zap.String("vault_tx_hash", ev.VaultTxHashHex))
+	err = qc.WithdrawVaultQueue.SendMessage(context.TODO(), messageBody)
+	if err != nil {
+		return fmt.Errorf("failed to push withdraw vault event: %w", err)
+	}
+	qc.logger.Info("successfully pushed withdraw vault event", zap.String("vault_tx_hash", ev.VaultTxHashHex))
+
+	return nil
+}
+
+// SCALAR
+
 // requeue message
 func (qc *QueueManager) ReQueueMessage(ctx context.Context, message client.QueueMessage, queueName string) error {
 	switch queueName {
@@ -209,12 +248,21 @@ func (qc *QueueManager) ReQueueMessage(ctx context.Context, message client.Queue
 		return qc.StatsQueue.ReQueueMessage(ctx, message)
 	case client.BtcInfoQueueName:
 		return qc.BtcInfoQueue.ReQueueMessage(ctx, message)
+	// SCALAR
+	case client.ActiveVaultQueueName:
+		return qc.VaultQueue.ReQueueMessage(ctx, message)
+	case client.BurningVaultQueueName:
+		return qc.BurningQueue.ReQueueMessage(ctx, message)
+	case client.WithdrawVaultQueueName:
+		return qc.WithdrawVaultQueue.ReQueueMessage(ctx, message)
+	// SCALAR
 	default:
 		return fmt.Errorf("unknown queue name: %s", queueName)
 	}
 }
 
 func (qc *QueueManager) Stop() error {
+
 	if err := qc.StakingQueue.Stop(); err != nil {
 		return err
 	}
@@ -238,41 +286,17 @@ func (qc *QueueManager) Stop() error {
 	if err := qc.BtcInfoQueue.Stop(); err != nil {
 		return err
 	}
-
-	return nil
-}
-
-// Scalar
-func (qc *QueueManager) PushVaultEvent(ev *client.ActiveVaultEvent) error {
-	jsonBytes, err := json.Marshal(ev)
-	if err != nil {
+	// SCALAR
+	if err := qc.VaultQueue.Stop(); err != nil {
 		return err
 	}
-	messageBody := string(jsonBytes)
-
-	qc.logger.Info("pushing scalar staking event", zap.String("tx_hash", ev.VaultTxHashHex))
-	err = qc.VaultQueue.SendMessage(context.TODO(), messageBody)
-	if err != nil {
-		return fmt.Errorf("failed to push scalar staking event: %w", err)
-	}
-	qc.logger.Info("successfully pushed scalar staking event", zap.String("tx_hash", ev.VaultTxHashHex))
-
-	return nil
-}
-
-func (qc *QueueManager) PushWithdrawVaultEvent(ev *client.WithdrawVaultEvent) error {
-	jsonBytes, err := json.Marshal(ev)
-	if err != nil {
+	if err := qc.BurningQueue.Stop(); err != nil {
 		return err
 	}
-	messageBody := string(jsonBytes)
-
-	qc.logger.Info("pushing withdraw vault event", zap.String("vault_tx_hash", ev.VaultTxHashHex))
-	err = qc.WithdrawVaultQueue.SendMessage(context.TODO(), messageBody)
-	if err != nil {
-		return fmt.Errorf("failed to push withdraw vault event: %w", err)
+	if err := qc.WithdrawVaultQueue.Stop(); err != nil {
+		return err
 	}
-	qc.logger.Info("successfully pushed withdraw vault event", zap.String("vault_tx_hash", ev.VaultTxHashHex))
+	// SCALAR
 
 	return nil
 }

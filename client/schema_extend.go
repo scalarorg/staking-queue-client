@@ -1,8 +1,22 @@
 package client
 
+const (
+	// Scalar
+	ActiveVaultQueueName   string = "active_vault_queue"
+	BurningVaultQueueName  string = "scalar_burning_queue"
+	WithdrawVaultQueueName string = "scalar_withdraw_vault_queue"
+)
+
+const (
+	ActiveVaultEventType   EventType = 7
+	BurningVaultEventType  EventType = 8
+	WithdrawVaultEventType EventType = 9
+)
+
 type ActiveVaultEvent struct {
-	EventType             EventType `json:"event_type"` // always 1. ActiveStakingEventType
+	EventType             EventType `json:"event_type"`
 	VaultTxHashHex        string    `json:"vault_tx_hash_hex"`
+	VaultTxHex            string    `json:"vault_tx_hex"`
 	StakerPkHex           string    `json:"staker_pk_hex"`
 	FinalityProviderPkHex string    `json:"finality_provider_pk_hex"`
 	StakingValue          uint64    `json:"staking_value"`
@@ -13,13 +27,21 @@ type ActiveVaultEvent struct {
 	ChainID                     []byte `json:"chain_id"`
 	ChainIdUserAddress          []byte `json:"chain_id_user_address"`
 	ChainIdSmartContractAddress []byte `json:"chain_id_smart_contract_address"`
-	MintingAmount               []byte `json:"amount_vault"`
-	StakingTxHex                string `json:"staking_tx_hex"`
+	MintingAmount               []byte `json:"amount_minting"`
 	IsOverflow                  bool   `json:"is_overflow"`
+}
+
+func (e ActiveVaultEvent) GetEventType() EventType {
+	return ActiveVaultEventType
+}
+
+func (e ActiveVaultEvent) GetVaultTxHashHex() string {
+	return e.VaultTxHashHex
 }
 
 func NewActiveVaultEvent(
 	vaultTxHashHex string,
+	vaultTxHex string,
 	stakerPkHex string,
 	finalityProviderPkHex string,
 	stakingValue uint64,
@@ -30,13 +52,13 @@ func NewActiveVaultEvent(
 	chainID []byte,
 	chainIdUserAddress []byte,
 	chainIdSmartContractAddress []byte,
-	amountVault []byte,
-	stakingTxHex string,
+	amountMinting []byte,
 	isOverflow bool,
 ) ActiveVaultEvent {
 	return ActiveVaultEvent{
-		EventType:             ActiveStakingEventType,
+		EventType:             ActiveVaultEventType,
 		VaultTxHashHex:        vaultTxHashHex,
+		VaultTxHex:            vaultTxHex,
 		StakerPkHex:           stakerPkHex,
 		FinalityProviderPkHex: finalityProviderPkHex,
 		StakingValue:          stakingValue,
@@ -47,8 +69,7 @@ func NewActiveVaultEvent(
 		ChainID:                     chainID,
 		ChainIdUserAddress:          chainIdUserAddress,
 		ChainIdSmartContractAddress: chainIdSmartContractAddress,
-		MintingAmount:               amountVault,
-		StakingTxHex:                stakingTxHex,
+		MintingAmount:               amountMinting,
 		IsOverflow:                  isOverflow,
 	}
 }
@@ -64,6 +85,14 @@ type BurningVaultEvent struct {
 	BurningTxHashHex   string `json:"burning_tx_hash_hex"`
 }
 
+func (e BurningVaultEvent) GetEventType() EventType {
+	return BurningVaultEventType
+}
+
+func (e BurningVaultEvent) GetVaultTxHashHex() string {
+	return e.VaultTxHashHex
+}
+
 func NewBurningVaultEvent(
 	vaultTxHashHex string,
 	burningStartHeight uint64,
@@ -74,7 +103,7 @@ func NewBurningVaultEvent(
 	burningTxHashHex string,
 ) BurningVaultEvent {
 	return BurningVaultEvent{
-		EventType:             UnbondingStakingEventType,
+		EventType:             BurningVaultEventType,
 		VaultTxHashHex:        vaultTxHashHex,
 		BurningStartHeight:    burningStartHeight,
 		BurningStartTimestamp: burningStartTimestamp,
@@ -91,7 +120,7 @@ type WithdrawVaultEvent struct {
 }
 
 func (e WithdrawVaultEvent) GetEventType() EventType {
-	return VaultEventType
+	return ActiveVaultEventType
 }
 
 func (e WithdrawVaultEvent) GetVaultTxHashHex() string {
@@ -100,7 +129,7 @@ func (e WithdrawVaultEvent) GetVaultTxHashHex() string {
 
 func NewWithdrawVaultEvent(vaultTxHashHex string) WithdrawVaultEvent {
 	return WithdrawVaultEvent{
-		EventType:      VaultEventType,
+		EventType:      WithdrawVaultEventType,
 		VaultTxHashHex: vaultTxHashHex,
 	}
 }

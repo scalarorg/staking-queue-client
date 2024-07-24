@@ -7,10 +7,6 @@ const (
 	ExpiredStakingQueueName   string = "expired_staking_queue"
 	StakingStatsQueueName     string = "staking_stats_queue"
 	BtcInfoQueueName          string = "btc_info_queue"
-	// Scalar
-	VaultQueueName    string = "scalar_vault_queue"
-	BurningQueueName  string = "scalar_burning_queue"
-	WithdrawVaultName string = "scalar_withdraw_vault_queue"
 )
 
 const (
@@ -20,8 +16,6 @@ const (
 	ExpiredStakingEventType   EventType = 4
 	StatsEventType            EventType = 5
 	BtcInfoEventType          EventType = 6
-	// Scalar
-	VaultEventType EventType = 7
 )
 
 type EventType int
