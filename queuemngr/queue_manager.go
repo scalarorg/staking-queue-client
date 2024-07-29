@@ -8,8 +8,9 @@ import (
 	"go.uber.org/zap"
 
 	// "github.com/babylonchain/staking-queue-client/client"
-	"github.com/babylonchain/staking-queue-client/config"
+	// "github.com/babylonchain/staking-queue-client/config"
 	"github.com/scalarorg/staking-queue-client/client"
+	"github.com/scalarorg/staking-queue-client/config"
 )
 
 type QueueManager struct {

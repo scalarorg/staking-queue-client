@@ -8,7 +8,8 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 
-	"github.com/babylonchain/staking-queue-client/config"
+	// "github.com/babylonchain/staking-queue-client/config"
+	"github.com/scalarorg/staking-queue-client/config"
 )
 
 const (

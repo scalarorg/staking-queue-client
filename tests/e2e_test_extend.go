@@ -7,8 +7,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	// "github.com/babylonchain/staking-queue-client/client"
-	"github.com/babylonchain/staking-queue-client/config"
+	// "github.com/babylonchain/staking-queue-client/config"
 	"github.com/scalarorg/staking-queue-client/client"
+	"github.com/scalarorg/staking-queue-client/config"
 )
 
 const (

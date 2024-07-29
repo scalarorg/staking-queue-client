@@ -3,7 +3,8 @@ package client
 import (
 	"context"
 
-	"github.com/babylonchain/staking-queue-client/config"
+	// "github.com/babylonchain/staking-queue-client/config"
+	"github.com/scalarorg/staking-queue-client/config"
 )
 
 type QueueMessage struct {
