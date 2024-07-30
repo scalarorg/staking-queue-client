@@ -46,7 +46,10 @@ func setupTestQueueConsumer(t *testing.T, cfg *config.QueueConfig) *TestServer {
 		client.ActiveVaultQueueName,
 		client.BurningVaultQueueName,
 		client.WithdrawVaultQueueName,
-		// Scalar
+		// Scalar purge delay queues
+		client.ActiveVaultQueueName + "_delay",
+		client.BurningVaultQueueName + "_delay",
+		client.WithdrawVaultQueueName + "_delay",
 
 		// purge delay queues too
 		client.ActiveStakingQueueName + "_delay",
