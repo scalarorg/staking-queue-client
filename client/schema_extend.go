@@ -2,15 +2,17 @@ package client
 
 const (
 	// Scalar
-	ActiveVaultQueueName   string = "active_vault_queue"
-	BurningVaultQueueName  string = "scalar_burning_queue"
-	WithdrawVaultQueueName string = "scalar_withdraw_vault_queue"
+	ActiveVaultQueueName            string = "active_vault_queue"
+	BurningVaultQueueName           string = "scalar_burning_queue"
+	SlashingOrLostKeyVaultQueueName string = "scalar_slashing_queue"
+	BurnWithoutDAppQueueName        string = "scalar_burn_without_dapp_queue"
 )
 
 const (
-	ActiveVaultEventType   EventType = 7
-	BurningVaultEventType  EventType = 8
-	WithdrawVaultEventType EventType = 9
+	ActiveVaultEventType            EventType = 7
+	BurningVaultEventType           EventType = 8
+	SlashingOrLostKeyVaultEventType EventType = 9
+	BurnWithoutDAppEventType        EventType = 10
 )
 
 type ActiveVaultEvent struct {
@@ -75,14 +77,8 @@ func NewActiveVaultEvent(
 }
 
 type BurningVaultEvent struct {
-	EventType             EventType `json:"event_type"` // always 2. UnbondingStakingEventType
-	VaultTxHashHex        string    `json:"vault_tx_hash_hex"`
-	BurningStartHeight    uint64    `json:"burning_start_height"`
-	BurningStartTimestamp int64     `json:"vault_start_timestamp"`
-	// BurningTimeLock       uint64    `json:"unbonding_timelock"`
-	BurningOutputIndex uint64 `json:"burning_output_index"`
-	BurningTxHex       string `json:"burning_tx_hex"`
-	BurningTxHashHex   string `json:"burning_tx_hash_hex"`
+	EventType      EventType `json:"event_type"`
+	VaultTxHashHex string    `json:"vault_tx_hash_hex"`
 }
 
 func (e BurningVaultEvent) GetEventType() EventType {
@@ -93,43 +89,49 @@ func (e BurningVaultEvent) GetVaultTxHashHex() string {
 	return e.VaultTxHashHex
 }
 
-func NewBurningVaultEvent(
-	vaultTxHashHex string,
-	burningStartHeight uint64,
-	burningStartTimestamp int64,
-	// burningTimeLock uint64,
-	burningOutputIndex uint64,
-	burningTxHex string,
-	burningTxHashHex string,
-) BurningVaultEvent {
+func NewBurningVaultEvent(vaultTxHashHex string) BurningVaultEvent {
 	return BurningVaultEvent{
-		EventType:             BurningVaultEventType,
-		VaultTxHashHex:        vaultTxHashHex,
-		BurningStartHeight:    burningStartHeight,
-		BurningStartTimestamp: burningStartTimestamp,
-		// BurningTimeLock:       burningTimeLock,
-		BurningOutputIndex: burningOutputIndex,
-		BurningTxHex:       burningTxHex,
-		BurningTxHashHex:   burningTxHashHex,
+		EventType:      BurningVaultEventType,
+		VaultTxHashHex: vaultTxHashHex,
 	}
 }
 
-type WithdrawVaultEvent struct {
+type SlashingOrLostKeyVaultEvent struct {
 	EventType      EventType `json:"event_type"` // always 3. WithdrawStakingEventType
 	VaultTxHashHex string    `json:"vault_tx_hash_hex"`
 }
 
-func (e WithdrawVaultEvent) GetEventType() EventType {
-	return ActiveVaultEventType
+func (e SlashingOrLostKeyVaultEvent) GetEventType() EventType {
+	return SlashingOrLostKeyVaultEventType
 }
 
-func (e WithdrawVaultEvent) GetVaultTxHashHex() string {
+func (e SlashingOrLostKeyVaultEvent) GetVaultTxHashHex() string {
 	return e.VaultTxHashHex
 }
 
-func NewWithdrawVaultEvent(vaultTxHashHex string) WithdrawVaultEvent {
-	return WithdrawVaultEvent{
-		EventType:      WithdrawVaultEventType,
+func NewSlashingOrLostKeyVaultEvent(vaultTxHashHex string) SlashingOrLostKeyVaultEvent {
+	return SlashingOrLostKeyVaultEvent{
+		EventType:      SlashingOrLostKeyVaultEventType,
+		VaultTxHashHex: vaultTxHashHex,
+	}
+}
+
+type BurnWithoutDAppVaultEvent struct {
+	EventType      EventType `json:"event_type"` // always 3. WithdrawStakingEventType
+	VaultTxHashHex string    `json:"vault_tx_hash_hex"`
+}
+
+func (e BurnWithoutDAppVaultEvent) GetEventType() EventType {
+	return BurnWithoutDAppEventType
+}
+
+func (e BurnWithoutDAppVaultEvent) GetVaultTxHashHex() string {
+	return e.VaultTxHashHex
+}
+
+func NewBurnWithoutDAppVaultEvent(vaultTxHashHex string) BurnWithoutDAppVaultEvent {
+	return BurnWithoutDAppVaultEvent{
+		EventType:      BurnWithoutDAppEventType,
 		VaultTxHashHex: vaultTxHashHex,
 	}
 }

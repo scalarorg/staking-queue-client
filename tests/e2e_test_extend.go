@@ -66,9 +66,9 @@ func TestBurningEvent(t *testing.T) {
 	}
 }
 
-func TestWithdrawVaultEvent(t *testing.T) {
-	numWithdrawVaultEvents := 3
-	withdrawEvents := buildNWithdrawVaultEvents(numWithdrawVaultEvents)
+func TestSlashingOrLostKeyEvent(t *testing.T) {
+	numSlashingOrLostKeyEvents := 3
+	slashingOrLostKeyEvents := buildNSlashingOrLostKeyEvents(numSlashingOrLostKeyEvents)
 	queueCfg := config.DefaultQueueConfig()
 
 	testServer := setupTestQueueConsumer(t, queueCfg)
@@ -76,17 +76,42 @@ func TestWithdrawVaultEvent(t *testing.T) {
 
 	queueManager := testServer.QueueManager
 
-	withdrawVaultEventsReceivedChan, err := queueManager.WithdrawVaultQueue.ReceiveMessages()
+	slashingOrLostKeyEventReceivedChan, err := queueManager.SlashingOrLostKeyQueue.ReceiveMessages()
 	require.NoError(t, err)
 
-	for _, ev := range withdrawEvents {
-		err = queueManager.PushWithdrawVaultEvent(ev)
+	for _, ev := range slashingOrLostKeyEvents {
+		err = queueManager.PushSlashingOrLostKeyEvent(ev)
 		require.NoError(t, err)
 
-		receivedEv := <-withdrawVaultEventsReceivedChan
-		var withdrawVaultEv client.WithdrawVaultEvent
-		err := json.Unmarshal([]byte(receivedEv.Body), &withdrawVaultEv)
+		receivedEv := <-slashingOrLostKeyEventReceivedChan
+		var slashingOrLostKeyEvent client.SlashingOrLostKeyVaultEvent
+		err := json.Unmarshal([]byte(receivedEv.Body), &slashingOrLostKeyEvent)
 		require.NoError(t, err)
-		require.Equal(t, ev, &withdrawVaultEv)
+		require.Equal(t, ev, &slashingOrLostKeyEvent)
+	}
+}
+
+func TestBurnWithoutDAppEvent(t *testing.T) {
+	numBurnWithoutDAppEvents := 3
+	burnWithoutDAppEvents := buildNBurnWithoutDAppEvents(numBurnWithoutDAppEvents)
+	queueCfg := config.DefaultQueueConfig()
+
+	testServer := setupTestQueueConsumer(t, queueCfg)
+	defer testServer.Stop(t)
+
+	queueManager := testServer.QueueManager
+
+	burnWithoutDAppEventReceivedChan, err := queueManager.BurnWithoutDAppQueue.ReceiveMessages()
+	require.NoError(t, err)
+
+	for _, ev := range burnWithoutDAppEvents {
+		err = queueManager.PushBurnWithoutDAppEvent(ev)
+		require.NoError(t, err)
+
+		receivedEv := <-burnWithoutDAppEventReceivedChan
+		var burnWithoutDAppEvent client.BurnWithoutDAppVaultEvent
+		err := json.Unmarshal([]byte(receivedEv.Body), &burnWithoutDAppEvent)
+		require.NoError(t, err)
+		require.Equal(t, ev, &burnWithoutDAppEvent)
 	}
 }

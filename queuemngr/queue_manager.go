@@ -15,9 +15,10 @@ import (
 
 type QueueManager struct {
 	// Scalar
-	VaultQueue         client.QueueClient
-	BurningQueue       client.QueueClient
-	WithdrawVaultQueue client.QueueClient
+	VaultQueue             client.QueueClient
+	BurningQueue           client.QueueClient
+	SlashingOrLostKeyQueue client.QueueClient
+	BurnWithoutDAppQueue   client.QueueClient
 
 	StakingQueue   client.QueueClient
 	UnbondingQueue client.QueueClient
@@ -69,10 +70,17 @@ func NewQueueManager(cfg *config.QueueConfig, logger *zap.Logger) (*QueueManager
 		return nil, fmt.Errorf("failed to create scalar burning queue: %w", err)
 	}
 
-	withdrawVaultQueue, err := client.NewQueueClient(cfg, client.WithdrawVaultQueueName)
+	slashingOrLostKeyQueue, err := client.NewQueueClient(cfg, client.SlashingOrLostKeyVaultQueueName)
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to create scalar withdraw vault queue: %w", err)
+		return nil, fmt.Errorf("failed to create scalar slashing or lost key queue: %w", err)
 	}
+
+	burnWithoutDAppQueue, err := client.NewQueueClient(cfg, client.BurnWithoutDAppQueueName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create scalar burn without dapp queue: %w", err)
+	}
+
 	// Scalar
 
 	return &QueueManager{
@@ -84,9 +92,10 @@ func NewQueueManager(cfg *config.QueueConfig, logger *zap.Logger) (*QueueManager
 		BtcInfoQueue:   BtcInfoQueue,
 		logger:         logger.With(zap.String("module", "queue consumer")),
 		// Scalar
-		VaultQueue:         vaultQueue,
-		BurningQueue:       burningQueue,
-		WithdrawVaultQueue: withdrawVaultQueue,
+		VaultQueue:             vaultQueue,
+		BurningQueue:           burningQueue,
+		SlashingOrLostKeyQueue: slashingOrLostKeyQueue,
+		BurnWithoutDAppQueue:   burnWithoutDAppQueue,
 		// Scalar
 	}, nil
 }
@@ -215,19 +224,36 @@ func (qc *QueueManager) PushBurningEvent(ev *client.BurningVaultEvent) error {
 	return nil
 }
 
-func (qc *QueueManager) PushWithdrawVaultEvent(ev *client.WithdrawVaultEvent) error {
+func (qc *QueueManager) PushSlashingOrLostKeyEvent(ev *client.SlashingOrLostKeyVaultEvent) error {
 	jsonBytes, err := json.Marshal(ev)
 	if err != nil {
 		return err
 	}
 	messageBody := string(jsonBytes)
 
-	qc.logger.Info("pushing withdraw vault event", zap.String("vault_tx_hash", ev.VaultTxHashHex))
-	err = qc.WithdrawVaultQueue.SendMessage(context.TODO(), messageBody)
+	qc.logger.Info("pushing slashing or lost key event", zap.String("vault_tx_hash", ev.VaultTxHashHex))
+	err = qc.SlashingOrLostKeyQueue.SendMessage(context.TODO(), messageBody)
 	if err != nil {
-		return fmt.Errorf("failed to push withdraw vault event: %w", err)
+		return fmt.Errorf("failed to push slashing or lost key event: %w", err)
 	}
-	qc.logger.Info("successfully pushed withdraw vault event", zap.String("vault_tx_hash", ev.VaultTxHashHex))
+	qc.logger.Info("successfully pushed slashing or lost key event", zap.String("vault_tx_hash", ev.VaultTxHashHex))
+
+	return nil
+}
+
+func (qc *QueueManager) PushBurnWithoutDAppEvent(ev *client.BurnWithoutDAppVaultEvent) error {
+	jsonBytes, err := json.Marshal(ev)
+	if err != nil {
+		return err
+	}
+	messageBody := string(jsonBytes)
+
+	qc.logger.Info("pushing burn without dapp event", zap.String("vault_tx_hash", ev.VaultTxHashHex))
+	err = qc.BurnWithoutDAppQueue.SendMessage(context.TODO(), messageBody)
+	if err != nil {
+		return fmt.Errorf("failed to push burn without dapp event: %w", err)
+	}
+	qc.logger.Info("successfully pushed burn without dapp event", zap.String("vault_tx_hash", ev.VaultTxHashHex))
 
 	return nil
 }
@@ -254,8 +280,10 @@ func (qc *QueueManager) ReQueueMessage(ctx context.Context, message client.Queue
 		return qc.VaultQueue.ReQueueMessage(ctx, message)
 	case client.BurningVaultQueueName:
 		return qc.BurningQueue.ReQueueMessage(ctx, message)
-	case client.WithdrawVaultQueueName:
-		return qc.WithdrawVaultQueue.ReQueueMessage(ctx, message)
+	case client.SlashingOrLostKeyVaultQueueName:
+		return qc.SlashingOrLostKeyQueue.ReQueueMessage(ctx, message)
+	case client.BurnWithoutDAppQueueName:
+		return qc.BurnWithoutDAppQueue.ReQueueMessage(ctx, message)
 	// SCALAR
 	default:
 		return fmt.Errorf("unknown queue name: %s", queueName)
@@ -294,7 +322,10 @@ func (qc *QueueManager) Stop() error {
 	if err := qc.BurningQueue.Stop(); err != nil {
 		return err
 	}
-	if err := qc.WithdrawVaultQueue.Stop(); err != nil {
+	if err := qc.SlashingOrLostKeyQueue.Stop(); err != nil {
+		return err
+	}
+	if err := qc.BurnWithoutDAppQueue.Stop(); err != nil {
 		return err
 	}
 	// SCALAR
