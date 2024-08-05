@@ -5,7 +5,7 @@ const (
 	ActiveVaultQueueName            string = "active_vault_queue"
 	BurningVaultQueueName           string = "scalar_burning_queue"
 	SlashingOrLostKeyVaultQueueName string = "scalar_slashing_queue"
-	BurnWithoutDAppQueueName        string = "scalar_burn_without_dapp_queue"
+	BurnWithoutDAppVaultQueueName   string = "scalar_burn_without_dapp_queue"
 )
 
 const (

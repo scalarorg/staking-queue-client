@@ -76,7 +76,7 @@ func NewQueueManager(cfg *config.QueueConfig, logger *zap.Logger) (*QueueManager
 		return nil, fmt.Errorf("failed to create scalar slashing or lost key queue: %w", err)
 	}
 
-	burnWithoutDAppQueue, err := client.NewQueueClient(cfg, client.BurnWithoutDAppQueueName)
+	burnWithoutDAppQueue, err := client.NewQueueClient(cfg, client.BurnWithoutDAppVaultQueueName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create scalar burn without dapp queue: %w", err)
 	}
@@ -282,7 +282,7 @@ func (qc *QueueManager) ReQueueMessage(ctx context.Context, message client.Queue
 		return qc.BurningQueue.ReQueueMessage(ctx, message)
 	case client.SlashingOrLostKeyVaultQueueName:
 		return qc.SlashingOrLostKeyQueue.ReQueueMessage(ctx, message)
-	case client.BurnWithoutDAppQueueName:
+	case client.BurnWithoutDAppVaultQueueName:
 		return qc.BurnWithoutDAppQueue.ReQueueMessage(ctx, message)
 	// SCALAR
 	default:
