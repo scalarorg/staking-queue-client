@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -12,6 +13,8 @@ import (
 	"github.com/scalarorg/staking-queue-client/client"
 	"github.com/scalarorg/staking-queue-client/config"
 )
+
+const timeout = 5 * time.Second
 
 type QueueManager struct {
 	// Scalar
@@ -330,5 +333,31 @@ func (qc *QueueManager) Stop() error {
 	}
 	// SCALAR
 
+	return nil
+}
+
+
+// Ping checks the health of the RabbitMQ infrastructure.
+func (qc *QueueManager) Ping() error {
+	queues := []client.QueueClient{
+		qc.StakingQueue,
+		qc.UnbondingQueue,
+		qc.WithdrawQueue,
+		qc.ExpiryQueue,
+		qc.StatsQueue,
+		qc.BtcInfoQueue,
+	}
+
+	for _, queue := range queues {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+
+		err := queue.Ping(ctx)
+		if err != nil {
+			qc.logger.Error("ping failed", zap.String("queue", queue.GetQueueName()), zap.Error(err))
+			return err
+		}
+		qc.logger.Info("ping successful", zap.String("queue", queue.GetQueueName()))
+	}
 	return nil
 }

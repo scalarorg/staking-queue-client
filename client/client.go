@@ -30,6 +30,7 @@ type QueueClient interface {
 	Stop() error
 	GetQueueName() string
 	ReQueueMessage(ctx context.Context, message QueueMessage) error
+	Ping(ctx context.Context) error
 }
 
 func NewQueueClient(config *config.QueueConfig, queueName string) (QueueClient, error) {
