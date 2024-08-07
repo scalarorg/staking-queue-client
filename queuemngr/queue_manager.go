@@ -217,12 +217,12 @@ func (qc *QueueManager) PushBurningEvent(ev *client.BurningVaultEvent) error {
 	}
 	messageBody := string(jsonBytes)
 
-	qc.logger.Info("pushing scalar vault event", zap.String("tx_hash", ev.VaultTxHashHex))
+	qc.logger.Info("pushing burning event", zap.String("tx_hash", ev.VaultTxHashHex))
 	err = qc.BurningQueue.SendMessage(context.TODO(), messageBody)
 	if err != nil {
-		return fmt.Errorf("failed to push scalar vault event: %w", err)
+		return fmt.Errorf("failed to push burning event: %w", err)
 	}
-	qc.logger.Info("successfully pushed scalar vault event", zap.String("tx_hash", ev.VaultTxHashHex))
+	qc.logger.Info("successfully pushed burning event", zap.String("tx_hash", ev.VaultTxHashHex))
 
 	return nil
 }
@@ -335,7 +335,6 @@ func (qc *QueueManager) Stop() error {
 
 	return nil
 }
-
 
 // Ping checks the health of the RabbitMQ infrastructure.
 func (qc *QueueManager) Ping() error {
